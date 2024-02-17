@@ -1,0 +1,92 @@
+# STAT-301 Project - Income Binary Prediction 
+STAT-301 group 6 for 2024 January - April semester. 
+
+## Objective
+The objective of this project is to predict whether a person makes an annual income over $50,000 a year, or <= $50,000 a year. 
+
+## Dataset Metadata 
+The dataset that is used in this project is known as the `Census Income` dataset, a dataset to predict whether an individual makes over $50,000 per year. This dataset was donated on April 30, 1996 to the [UC Irvine Machine Learning Repository](https://archive.ics.uci.edu/dataset/2/adult). The data was extracted by Barry Becker from the 1994 Census database according to some criterion.   
+
+The dataset has 15 variables including the target variable. 
+| Variable Name | Description | Type of Variable | 
+| --- | --- | --- | 
+| `age` | Age of individual | Feature, Integer | 
+| `workclass` | Categorical variable describing individuals' working class | Feature, Categorical | 
+| `fnlwgt` | Unknown | Feature, Integer | 
+| `education` | Describes the education level of an individual | Feature, Categorical | 
+| `education-num` | Numerical description of education level | Feature, Integer | 
+| `marital-status` | Married, not-married etc. of the individual | Feature, Categorical | 
+| `occupation` | General description of individuals' job | Feature, Categorical | 
+| `relationship` | Relationship status of individual | Feature, Categorical | 
+| `race` | Race of individual | Feature, Categorical | 
+| `sex` | Sex of individual | Feature, Categorical | 
+| `capital-gain` | Capital gain of individual | Feature, Integer | 
+| `capital-loss` | Capital loss of an individual | Feature, Integer | 
+| `hours-per-week` | Hours worked per week | Feature, Integer | 
+| `native-country` | Native country of individual | Feature, Categorical | 
+| `income` | Binary >50K or <=50K income | Target, Categorical | 
+
+Further detailed description is available at the [dataset link](https://archive.ics.uci.edu/dataset/2/adult)
+
+There are a variety of variables, some of which may be redundant. For instance, `education` is a categorical feature to describe the education level, whereas `education-num` is an integer which also describes the education level. There is likely a need to perform a feature-selection process. 
+
+Some variables that seem to be most helpful at the moment are features such as `hours-per-week`, `capital-gain`, `capital-loss` since a person's annual income is a function of the monetary rate and hours worked. However, monetary rate (hourly wage for example) does not seem to be included as a feature. 
+
+## Data Characterization 
+```{r echo=FALSE,message=FALSE}
+library(tidyverse)
+```
+
+Load the data, and assign feature names to the columns. 
+```{r}
+current_filepath <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(current_filepath)
+
+income.data.train <- paste0(current_filepath, "/../Data/adult.data") %>% 
+    read.csv(header = FALSE)
+income.data.test <- paste0(current_filepath, "/../Data/adult.test") %>% 
+    read.csv(header = FALSE, skip=1)
+
+feature_names <- c('age', 'workclass', 'fnlwgt', 'education',
+                   'education-num', 'marital-status', 'occupation',
+                   'relationship', 'race', 'sex', 'capital-gain', 
+                   'capital-loss', 'hours-per-week', 'native-country',
+                   'income')
+names(income.data.train) <- feature_names
+names(income.data.test) <- feature_names
+
+income.data.all <- rbind(income.data.train, income.data.test)
+```
+All missing data seem to be encoded using the ` ?` character. Thus, after some processing (converting ` ?` to `NA`), `DataExplorer::create_report()` function will be used to characterize the basics of the data. 
+```{r echo=T, eval=F, results='hide'}
+income.data.all[income.data.all == ' ?'] <- NA
+income.data.train[income.data.train == ' ?'] <- NA
+income.data.test[income.data.test == ' ?'] <- NA
+
+# >>> Standard characteristics about data <<< #
+DataExplorer::create_report(income.data.all, 
+                            output_file = "data-report-all.html", 
+                            output_dir = paste0(getwd(), "/Data-Reports/"))
+DataExplorer::create_report(income.data.train, 
+                            output_file = "data-report-train.html",
+                            output_dir = paste0(getwd(), "/Data-Reports/"))
+DataExplorer::create_report(income.data.test, 
+                            output_file = "data-report-test.html",
+                            output_dir = paste0(getwd(), "/Data-Reports/"))
+```
+We've created a simple data report for the `train`, `test` and `all` (`train` and `test` put together). 
+From these, we get a simple characterization of the data:   
+* 40% of the features are **continuous**  
+* 60% of the features are **descrete** or **categorical**  
+* Missing data occurs in the `occupation`, `workclass` and `native-country` features.   
+Generally, missing data may be removed or imputed according to some criterion. In this case, I believe that the fact that this data is missing is informative in and of itself, thus the " ?" value will be kept. 
+
+## Question 
+The question that will be answered in this project is: 
+> What features in the census data from 1994 are most important in predicting whether an individual in the United States makes >$50,000 or <= $50,000 per year?
+
+Using the variables explained in the previous section, we will determine which of the features are most important in predicting the income status of individuals in the United States. 
+
+Because the income of an individual is a function of a variety of things (such as hourly rate, number of hours worked, which are functions of things like education etc.) Because most of the data is categorical in nature (before feature selection) the prediction will likely be a result of complex interactions between the many categorical features. 
+
+
